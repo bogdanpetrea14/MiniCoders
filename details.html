@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalii Facilitate - SportHub</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">SportHub</div>
+        <div class="nav-links">
+            <a href="index.html">Înapoi la Hartă</a>
+        </div>
+    </nav>
+
+    <div class="details-container">
+        <div class="facility-header">
+            <h1 id="facilityName">Nume Facilitate</h1>
+            <p id="facilityType" style="color: var(--secondary-color); font-weight: bold;">Tip Sport</p>
+        </div>
+
+        <div class="facility-meta">
+            <div class="meta-item">
+                <strong>Adresă:</strong>
+                <span id="facilityAddress">Strada Exemplu nr. 1</span>
+            </div>
+            <div class="meta-item">
+                <strong>Program:</strong>
+                <span id="facilityHours">08:00 - 22:00</span>
+            </div>
+            <div class="meta-item">
+                <strong>Rating:</strong>
+                <span id="facilityRating" class="rating">★ 4.5</span>
+            </div>
+        </div>
+
+        <div class="facility-description">
+            <h3>Descriere</h3>
+            <p id="facilityDescription">Descrierea facilității va apărea aici.</p>
+        </div>
+
+        <div class="reviews-section">
+            <h3>Recenzii</h3>
+            <div id="reviewsList">
+                <!-- Reviews will be loaded here -->
+                <p>Nu există recenzii încă.</p>
+            </div>
+
+            <!-- Add Review Form (only if logged in) -->
+            <div id="addReviewContainer" style="margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1rem;">
+                <h4>Adaugă o recenzie</h4>
+                <form id="reviewForm">
+                    <div class="form-group">
+                        <label for="rating">Notă (1-5):</label>
+                        <select id="rating" required>
+                            <option value="5">5 - Excelent</option>
+                            <option value="4">4 - Foarte bun</option>
+                            <option value="3">3 - Bun</option>
+                            <option value="2">2 - Slab</option>
+                            <option value="1">1 - Foarte slab</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="comment">Comentariu:</label>
+                        <textarea id="comment" rows="3" style="width: 100%; padding: 0.5rem;" required></textarea>
+                    </div>
+                    <button type="submit" class="btn">Trimite Recenzie</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/data.js"></script>
+</body>
+
+</html>

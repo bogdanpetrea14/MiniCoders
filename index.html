@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SportHub - Hartă Facilități Sportive</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- ArcGIS API CSS -->
+    <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="logo">SportHub</div>
+        <div class="nav-links">
+            <a href="index.html" class="active">Hartă</a>
+            <a href="auth.html" id="authLink">Autentificare</a>
+            <button id="logoutBtn" style="display: none;">Deconectare</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Sidebar for Filters -->
+        <aside class="sidebar">
+            <h3>Filtrează</h3>
+            <div class="filter-group">
+                <label for="typeFilter">Tip Sport:</label>
+                <select id="typeFilter">
+                    <option value="all">Toate</option>
+                    <option value="fotbal">Fotbal</option>
+                    <option value="baschet">Baschet</option>
+                    <option value="tenis">Tenis</option>
+                    <option value="inot">Înot</option>
+                    <option value="fitness">Fitness</option>
+                    <option value="alergare">Alergare</option>
+                </select>
+            </div>
+            <div id="facilityList" class="facility-list">
+                <!-- List of visible facilities will appear here -->
+                <p>Se încarcă facilitățile...</p>
+            </div>
+        </aside>
+
+        <!-- Map Container -->
+        <main class="map-container">
+            <div id="viewDiv"></div>
+        </main>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module" src="js/firebase-config.js"></script>
+    
+    <!-- ArcGIS API -->
+    <script src="https://js.arcgis.com/4.28/"></script>
+    
+    <!-- App Scripts -->
+    <script type="module" src="js/map.js"></script>
+    <script type="module" src="js/auth.js"></script>
+</body>
+</html>

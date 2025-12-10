@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autentificare - SportHub</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">SportHub</div>
+        <div class="nav-links">
+            <a href="index.html">Hartă</a>
+        </div>
+    </nav>
+
+    <div class="auth-container">
+        <h2 id="authTitle">Autentificare</h2>
+        <form id="authForm">
+            <div class="form-group" id="nameGroup" style="display: none;">
+                <label for="name">Nume:</label>
+                <input type="text" id="name" placeholder="Numele tău">
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" required placeholder="exemplu@email.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Parolă:</label>
+                <input type="password" id="password" required placeholder="******">
+            </div>
+            <button type="submit" class="btn" id="submitBtn">Logare</button>
+        </form>
+        <div class="switch-auth">
+            <p id="switchText">Nu ai cont? <a href="#" id="switchLink">Înregistrează-te</a></p>
+        </div>
+        <div id="authMessage" style="color: red; margin-top: 10px; text-align: center;"></div>
+    </div>
+
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/auth.js"></script>
+</body>
+
+</html>
