@@ -12,7 +12,10 @@
     <nav class="navbar">
         <div class="logo">SportHub</div>
         <div class="nav-links">
-            <a href="index.html">Înapoi la Hartă</a>
+            <a href="index.html">Hartă</a>
+            <button id="profileBtn" style="display: none;" onclick="window.location.href='profile.html'">Profil</button>
+            <button id="logoutBtn" style="display: none;">Deconectare</button>
+            <a href="auth.html" id="authLink">Autentificare</a>
         </div>
     </nav>
 
@@ -74,6 +77,7 @@
     </div>
 
     <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/auth.js"></script>
     <script type="module" src="js/data.js"></script>
 </body>
 

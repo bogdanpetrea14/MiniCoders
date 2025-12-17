@@ -1,5 +1,5 @@
 import { db, auth } from './firebase-config.js';
-import { doc, getDoc, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, getDoc, collection, query, where, getDocs, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -15,14 +15,9 @@ const reviewsList = document.getElementById('reviewsList');
 const reviewForm = document.getElementById('reviewForm');
 const addReviewContainer = document.getElementById('addReviewContainer');
 
-// Load Facility Data
+// Load Facility Details
 async function loadFacilityDetails() {
     if (!facilityId) return;
-
-    // NOTE: In a real scenario, we would query Firestore for the facility details using the ID.
-    // However, since the facility data primarily lives in the ArcGIS Feature Layer for now,
-    // we might need to query the Feature Layer or have a synced document in Firestore.
-    // For this demo (Task 4), we will assume there is a Firestore document or mock it if not found.
 
     try {
         const docRef = doc(db, "facilities", facilityId);
@@ -30,19 +25,15 @@ async function loadFacilityDetails() {
 
         if (docSnap.exists()) {
             const data = docSnap.data();
+            
             facilityName.textContent = data.name;
-            facilityType.textContent = data.type;
+            facilityType.textContent = data.type + (data.priceLevel ? ` (${data.priceLevel})` : "");
             facilityAddress.textContent = data.address;
-            facilityHours.textContent = data.openedHours || "N/A";
-            facilityRating.textContent = `★ ${data.averageRating || 0}`;
+            facilityHours.textContent = data.openedHours || "08:00 - 22:00";
+            facilityRating.textContent = `★ ${data.averageRating || "N/A"}`;
             facilityDescription.textContent = data.description || "Fără descriere.";
         } else {
-            // Mock data if not found (since we haven't populated DB yet)
-            console.log("No such document in Firestore! Using mock data.");
-            facilityName.textContent = "Facilitate Demo";
-            facilityType.textContent = "Fotbal";
-            facilityAddress.textContent = "Strada Demo 123";
-            facilityDescription.textContent = "Aceasta este o facilitate demonstrativă deoarece nu există date în baza de date.";
+            document.querySelector('.details-container').innerHTML = "<h2>Facilitatea nu a fost găsită!</h2>";
         }
     } catch (error) {
         console.error("Error getting document:", error);
@@ -66,12 +57,16 @@ async function loadReviews() {
         const review = doc.data();
         const reviewEl = document.createElement('div');
         reviewEl.className = 'review-card';
+        // Convert timestamp to date string if it exists
+        const dateStr = review.createdAt ? new Date(review.createdAt.seconds * 1000).toLocaleDateString() : '';
+        
         reviewEl.innerHTML = `
             <div class="review-header">
-                <strong>Utilizator</strong>
+                <strong>${review.userName || 'Utilizator'}</strong>
                 <span class="rating">★ ${review.rating}</span>
             </div>
             <p>${review.comment}</p>
+            <small style="color:#999">${dateStr}</small>
         `;
         reviewsList.appendChild(reviewEl);
     });
@@ -81,26 +76,46 @@ async function loadReviews() {
 if (reviewForm) {
     reviewForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const rating = document.getElementById('rating').value;
+        const rating = parseInt(document.getElementById('rating').value);
         const comment = document.getElementById('comment').value;
         const user = auth.currentUser;
 
         if (!user) {
-            alert("Trebuie să fii autentificat pentru a lăsa o recenzie.");
+            alert("Trebuie să fii autentificat!");
             return;
         }
 
         try {
+            // 1. Add review
             await addDoc(collection(db, "reviews"), {
                 facilityId: facilityId,
                 userId: user.uid,
-                rating: parseInt(rating),
+                userName: user.displayName || "Anonim",
+                rating: rating,
                 comment: comment,
                 createdAt: new Date()
             });
+
+            // 2. Update Average Rating in Facility (Optional but recommended)
+            // This is a simplified calculation. Ideally done via Cloud Functions.
+            const docRef = doc(db, "facilities", facilityId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                const oldTotal = (data.averageRating || 0) * (data.reviewCount || 0);
+                const newCount = (data.reviewCount || 0) + 1;
+                const newAvg = (oldTotal + rating) / newCount;
+
+                await updateDoc(docRef, {
+                    averageRating: parseFloat(newAvg.toFixed(1)),
+                    reviewCount: newCount
+                });
+            }
+
             alert("Recenzie adăugată!");
             reviewForm.reset();
-            loadReviews(); // Reload reviews
+            loadReviews(); // Reload reviews list
+            loadFacilityDetails(); // Reload rating header
         } catch (error) {
             console.error("Error adding review: ", error);
             alert("Eroare la adăugarea recenziei.");
@@ -108,7 +123,7 @@ if (reviewForm) {
     });
 }
 
-// Check Auth for Review Form
+// Check Auth Visibility
 onAuthStateChanged(auth, (user) => {
     if (user) {
         addReviewContainer.style.display = 'block';
@@ -117,10 +132,8 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// Initialize
+// Init
 if (facilityId) {
     loadFacilityDetails();
     loadReviews();
-} else {
-    document.querySelector('.details-container').innerHTML = '<p>ID facilitate lipsă.</p>';
 }

@@ -16,13 +16,22 @@ let isLogin = true;
 onAuthStateChanged(auth, (user) => {
     const authLink = document.getElementById('authLink');
     const logoutBtn = document.getElementById('logoutBtn');
+    const profileBtn = document.getElementById('profileBtn');
 
     if (user) {
         console.log("User is logged in:", user.email);
         if (authLink) authLink.style.display = 'none';
+        if (profileBtn) {
+            profileBtn.style.display = 'inline-block';
+            profileBtn.style.visibility = 'visible';
+        }
         if (logoutBtn) {
             logoutBtn.style.display = 'inline-block';
-            logoutBtn.addEventListener('click', () => {
+            logoutBtn.style.visibility = 'visible';
+            // Remove existing listeners to avoid duplicates
+            const newLogoutBtn = logoutBtn.cloneNode(true);
+            logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
+            newLogoutBtn.addEventListener('click', () => {
                 signOut(auth).then(() => {
                     window.location.href = 'index.html';
                 });
@@ -31,7 +40,14 @@ onAuthStateChanged(auth, (user) => {
     } else {
         console.log("User is logged out");
         if (authLink) authLink.style.display = 'inline-block';
-        if (logoutBtn) logoutBtn.style.display = 'none';
+        if (profileBtn) {
+            profileBtn.style.display = 'none';
+            profileBtn.style.visibility = 'hidden';
+        }
+        if (logoutBtn) {
+            logoutBtn.style.display = 'none';
+            logoutBtn.style.visibility = 'hidden';
+        }
     }
 });
 

@@ -1,105 +1,158 @@
-import { auth } from './firebase-config.js';
+import { db } from './firebase-config.js';
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// ArcGIS API Key
+// Your ArcGIS API Key
 const apiKey = "AAPTxy8BH1VEsoebNVZXo8HurJkT0tmZGqmeZW-Op790dOuenTFyF5piiH3bGkds8hStWnKcEwlxt50gYSDGEJhcI23gCFOX-i5YTnPq153nGWwv6weqvxJ1HA1aT0SD7OdBWT8peIW93HKi8CLCyQVdSXOtsgN6_86NsiwliaDmyAiMVEishmcJBqab-u0ELfCb7YQT-aWpMmArcPrytePscNfxQI7CdC1dqij5g8cfYoM.AT1_VbTxb1t6";
 
+// Load ArcGIS after Firebase is ready
 require([
     "esri/config",
     "esri/Map",
     "esri/views/MapView",
-    "esri/layers/FeatureLayer",
+    "esri/Graphic",
+    "esri/layers/GraphicsLayer",
     "esri/widgets/Search",
     "esri/widgets/Locate"
-], function (esriConfig, Map, MapView, FeatureLayer, Search, Locate) {
+], function (esriConfig, Map, MapView, Graphic, GraphicsLayer, Search, Locate) {
+    console.log("ArcGIS modules loaded"); // DEBUG
 
     esriConfig.apiKey = apiKey;
 
     const map = new Map({
-        basemap: "arcgis/topographic" // basemap styles service
+        basemap: "arcgis/topographic"
     });
 
     const view = new MapView({
         map: map,
-        center: [26.1025, 44.4268], // Longitude, latitude (Bucharest)
-        zoom: 13,
+        center: [26.1025, 44.4268], // Bucharest
+        zoom: 12,
         container: "viewDiv"
     });
 
-    // Define the popup template for facilities
+    // Create a layer to hold our custom points
+    const graphicsLayer = new GraphicsLayer();
+    map.add(graphicsLayer);
+
+    // Define the popup that appears when you click a dot
     const popupTemplate = {
         title: "{name}",
-        content: [
-            {
-                type: "fields",
-                fieldInfos: [
-                    {
-                        fieldName: "type",
-                        label: "Tip Sport"
-                    },
-                    {
-                        fieldName: "address",
-                        label: "Adresă"
-                    },
-                    {
-                        fieldName: "openedHours",
-                        label: "Program"
-                    }
-                ]
-            },
-            {
-                type: "text",
-                text: "<a href='details.html?id={OBJECTID}' class='btn' style='display:inline-block; margin-top:10px; text-align:center; color:white; text-decoration:none;'>Vezi Detalii</a>"
-            }
-        ]
+        content: `
+            <p><b>Tip:</b> {type}</p>
+            <p><b>Adresă:</b> {address}</p>
+            <p><b>Rating:</b> ⭐ {averageRating}</p>
+            <a href='details.html?id={facilityId}' class='btn' style='display:block; margin-top:10px; text-align:center; background:#3498db; color:white; padding:8px; text-decoration:none; border-radius:4px;'>Vezi Detalii & Recenzii</a>
+        `
     };
 
-    // Create the FeatureLayer
-    // NOTE: This URL is a placeholder. You need to create a Feature Layer in ArcGIS Online
-    // and replace this URL with your own hosted feature layer URL.
-    // For now, we can use a sample layer or just the setup code.
-    // Since we don't have the real URL yet, I'll comment this out and use a GraphicsLayer or just show the map.
-    // But per requirements, here is how it should look:
+    // --- MAIN FUNCTION: Fetch from Firestore & Add to Map ---
+    async function loadFacilitiesPoints() {
+        const facilityListSidebar = document.getElementById("facilityList");
+        if (!facilityListSidebar) return;
+        
+        facilityListSidebar.innerHTML = "<p>Se încarcă...</p>"; 
 
-    /*
-    const facilitiesLayer = new FeatureLayer({
-        url: "YOUR_FEATURE_LAYER_URL_HERE",
-        outFields: ["name", "type", "address", "openedHours", "OBJECTID"],
-        popupTemplate: popupTemplate
-    });
-    map.add(facilitiesLayer);
-    */
+        try {
+            // 1. Get data from Firestore
+            const querySnapshot = await getDocs(collection(db, "facilities"));
+            console.log("Facilities loaded:", querySnapshot.size); // DEBUG
+            
+            facilityListSidebar.innerHTML = ""; // Clear "Loading..." text
 
-    // Widgets
-    const search = new Search({
-        view: view
-    });
-    view.ui.add(search, "top-right");
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const docId = doc.id;
+                console.log("Facility:", data); // DEBUG
 
-    const locate = new Locate({
-        view: view
-    });
-    view.ui.add(locate, "top-left");
+                // 2. Only map items that have coordinates
+                if (data.latitude && data.longitude) {
+                    
+                    // Create the point geometry
+                    const point = {
+                        type: "point",
+                        longitude: data.longitude,
+                        latitude: data.latitude
+                    };
 
-    // Filter logic (Task 8)
-    const typeFilter = document.getElementById("typeFilter");
-    const facilityList = document.getElementById("facilityList");
+                    // Create the symbol (Orange dot)
+                    const simpleMarkerSymbol = {
+                        type: "simple-marker",
+                        color: [226, 119, 40],  // Orange color
+                        outline: {
+                            color: [255, 255, 255], // White border
+                            width: 1
+                        }
+                    };
 
-    if (typeFilter) {
-        typeFilter.addEventListener("change", function (event) {
-            const type = event.target.value;
-            // if (facilitiesLayer) {
-            //     if (type === "all") {
-            //         facilitiesLayer.definitionExpression = null;
-            //     } else {
-            //         facilitiesLayer.definitionExpression = `type = '${type}'`;
-            //     }
-            // }
-            console.log("Filtering by:", type);
-        });
+                    // Combine them into a Graphic
+                    const pointGraphic = new Graphic({
+                        geometry: point,
+                        symbol: simpleMarkerSymbol,
+                        attributes: {
+                            ...data,
+                            facilityId: docId  // Make sure facilityId is in attributes
+                        },
+                        popupTemplate: popupTemplate
+                    });
+
+                    // Add to map
+                    graphicsLayer.add(pointGraphic);
+
+                    // 3. Add to Sidebar List
+                    const listItem = document.createElement("div");
+                    listItem.className = "facility-item";
+                    listItem.innerHTML = `
+                        <h4>${data.name}</h4>
+                        <p>${data.type} • ⭐ ${data.averageRating || 0}</p>
+                    `;
+                    
+                    // Click sidebar item to zoom to point
+                    listItem.addEventListener("click", () => {
+                        view.goTo({
+                            target: pointGraphic,
+                            zoom: 15
+                        });
+                        view.openPopup({
+                            features: [pointGraphic],
+                            location: pointGraphic.geometry
+                        });
+                    });
+
+                    facilityListSidebar.appendChild(listItem);
+                }
+            });
+
+        } catch (error) {
+            console.error("Error loading facilities:", error);
+            if (facilityListSidebar) {
+                facilityListSidebar.innerHTML = "<p>Eroare la încărcarea datelor.</p>";
+            }
+        }
     }
 
-    // Populate sidebar list (Mock data for now since we don't have the layer connected)
-    // In a real scenario, we would query the FeatureLayer
-    facilityList.innerHTML = "<p>Conectați Feature Layer-ul pentru a vedea facilitățile.</p>";
+    // Run the function!
+    loadFacilitiesPoints();
 
+    // Add Search and Locate widgets
+    const search = new Search({ view: view });
+    view.ui.add(search, "top-right");
+
+    const locate = new Locate({ view: view });
+    view.ui.add(locate, "top-left");
+
+    // Filter Logic
+    const typeFilter = document.getElementById("typeFilter");
+    if (typeFilter) {
+        typeFilter.addEventListener("change", (event) => {
+            const selectedType = event.target.value;
+            
+            // Loop through all graphics and hide/show them
+            graphicsLayer.graphics.forEach((graphic) => {
+                if (selectedType === "all" || graphic.attributes.type === selectedType) {
+                    graphic.visible = true;
+                } else {
+                    graphic.visible = false;
+                }
+            });
+        });
+    }
 });
