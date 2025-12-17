@@ -4,6 +4,7 @@ import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/f
 // Your ArcGIS API Key
 const apiKey = "AAPTxy8BH1VEsoebNVZXo8HurJkT0tmZGqmeZW-Op790dOuenTFyF5piiH3bGkds8hStWnKcEwlxt50gYSDGEJhcI23gCFOX-i5YTnPq153nGWwv6weqvxJ1HA1aT0SD7OdBWT8peIW93HKi8CLCyQVdSXOtsgN6_86NsiwliaDmyAiMVEishmcJBqab-u0ELfCb7YQT-aWpMmArcPrytePscNfxQI7CdC1dqij5g8cfYoM.AT1_VbTxb1t6";
 
+// Load ArcGIS after Firebase is ready
 require([
     "esri/config",
     "esri/Map",
@@ -13,6 +14,7 @@ require([
     "esri/widgets/Search",
     "esri/widgets/Locate"
 ], function (esriConfig, Map, MapView, Graphic, GraphicsLayer, Search, Locate) {
+    console.log("ArcGIS modules loaded"); // DEBUG
 
     esriConfig.apiKey = apiKey;
 
@@ -45,16 +47,21 @@ require([
     // --- MAIN FUNCTION: Fetch from Firestore & Add to Map ---
     async function loadFacilitiesPoints() {
         const facilityListSidebar = document.getElementById("facilityList");
+        if (!facilityListSidebar) return;
+        
         facilityListSidebar.innerHTML = "<p>Se încarcă...</p>"; 
 
         try {
             // 1. Get data from Firestore
             const querySnapshot = await getDocs(collection(db, "facilities"));
+            console.log("Facilities loaded:", querySnapshot.size); // DEBUG
             
             facilityListSidebar.innerHTML = ""; // Clear "Loading..." text
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
+                const docId = doc.id;
+                console.log("Facility:", data); // DEBUG
 
                 // 2. Only map items that have coordinates
                 if (data.latitude && data.longitude) {
@@ -80,7 +87,10 @@ require([
                     const pointGraphic = new Graphic({
                         geometry: point,
                         symbol: simpleMarkerSymbol,
-                        attributes: data, // Attach all data to the graphic so popup works
+                        attributes: {
+                            ...data,
+                            facilityId: docId  // Make sure facilityId is in attributes
+                        },
                         popupTemplate: popupTemplate
                     });
 
@@ -113,7 +123,9 @@ require([
 
         } catch (error) {
             console.error("Error loading facilities:", error);
-            facilityListSidebar.innerHTML = "<p>Eroare la încărcarea datelor.</p>";
+            if (facilityListSidebar) {
+                facilityListSidebar.innerHTML = "<p>Eroare la încărcarea datelor.</p>";
+            }
         }
     }
 

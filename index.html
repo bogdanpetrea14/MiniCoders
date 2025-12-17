@@ -18,8 +18,9 @@
         <div class="logo">SportHub</div>
         <div class="nav-links">
             <a href="index.html" class="active">Hartă</a>
-            <a href="auth.html" id="authLink">Autentificare</a>
+            <button id="profileBtn" style="display: none;" onclick="window.location.href='profile.html'">Profil</button>
             <button id="logoutBtn" style="display: none;">Deconectare</button>
+            <a href="auth.html" id="authLink">Autentificare</a>
         </div>
     </nav>
 
@@ -52,13 +53,13 @@
         </main>
     </div>
 
-    <!-- Firebase SDKs -->
+    <!-- Firebase SDKs - Load first -->
     <script type="module" src="js/firebase-config.js"></script>
     
-    <!-- ArcGIS API -->
+    <!-- ArcGIS API - Load before map.js -->
     <script src="https://js.arcgis.com/4.28/"></script>
     
-    <!-- App Scripts -->
+    <!-- App Scripts - Load after Firebase and ArcGIS -->
     <script type="module" src="js/map.js"></script>
     <script type="module" src="js/auth.js"></script>
 </body>
