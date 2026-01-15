@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-config.js';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const authForm = document.getElementById('authForm');
 const switchLink = document.getElementById('switchLink');
@@ -13,10 +13,11 @@ const authMessage = document.getElementById('authMessage');
 let isLogin = true;
 
 // Handle Auth State on Page Load (for Navbar)
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
     const authLink = document.getElementById('authLink');
     const logoutBtn = document.getElementById('logoutBtn');
     const profileBtn = document.getElementById('profileBtn');
+    const addFacilityBtn = document.getElementById('addFacilityBtn');
 
     if (user) {
         console.log("User is logged in:", user.email);
@@ -25,6 +26,24 @@ onAuthStateChanged(auth, (user) => {
             profileBtn.style.display = 'inline-block';
             profileBtn.style.visibility = 'visible';
         }
+
+        // Fetch user role
+        try {
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (userDoc.exists() && userDoc.data().role === "admin") {
+                document.body.classList.add('is-admin');
+                if (addFacilityBtn) {
+                    addFacilityBtn.style.display = 'inline-block';
+                    addFacilityBtn.style.visibility = 'visible';
+                }
+            } else {
+                document.body.classList.remove('is-admin');
+                if (addFacilityBtn) addFacilityBtn.style.display = 'none';
+            }
+        } catch (error) {
+            console.error("Error fetching user role:", error);
+        }
+
         if (logoutBtn) {
             logoutBtn.style.display = 'inline-block';
             logoutBtn.style.visibility = 'visible';
@@ -32,6 +51,7 @@ onAuthStateChanged(auth, (user) => {
             const newLogoutBtn = logoutBtn.cloneNode(true);
             logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
             newLogoutBtn.addEventListener('click', () => {
+                document.body.classList.remove('is-admin');
                 signOut(auth).then(() => {
                     window.location.href = 'index.html';
                 });
@@ -47,6 +67,10 @@ onAuthStateChanged(auth, (user) => {
         if (logoutBtn) {
             logoutBtn.style.display = 'none';
             logoutBtn.style.visibility = 'hidden';
+        }
+        if (addFacilityBtn) {
+            addFacilityBtn.style.display = 'none';
+            addFacilityBtn.style.visibility = 'hidden';
         }
     }
 });

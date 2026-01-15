@@ -1,22 +1,25 @@
 <!DOCTYPE html>
 <html lang="ro">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SportHub - Hartă Facilități Sportive</title>
-    
+
     <!-- CSS -->
     <link rel="stylesheet" href="css/style.css">
-    
+
     <!-- ArcGIS API CSS -->
     <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css">
 </head>
+
 <body>
 
     <!-- Navigation -->
     <nav class="navbar">
         <div class="logo">SportHub</div>
         <div class="nav-links">
+            <button id="addFacilityBtn" style="display: none;">Adaugă facilitate</button>
             <a href="index.html" class="active">Hartă</a>
             <button id="profileBtn" style="display: none;" onclick="window.location.href='profile.html'">Profil</button>
             <button id="logoutBtn" style="display: none;">Deconectare</button>
@@ -55,12 +58,64 @@
 
     <!-- Firebase SDKs - Load first -->
     <script type="module" src="js/firebase-config.js"></script>
-    
+
     <!-- ArcGIS API - Load before map.js -->
     <script src="https://js.arcgis.com/4.28/"></script>
-    
+
     <!-- App Scripts - Load after Firebase and ArcGIS -->
     <script type="module" src="js/map.js"></script>
     <script type="module" src="js/auth.js"></script>
+
+    <!-- Modal for Adding Facility -->
+    <div id="addFacilityModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Adaugă Facilitate Nouă</h2>
+            <form id="addFacilityForm">
+                <div class="form-group">
+                    <label for="facName">Nume:</label>
+                    <input type="text" id="facName" required>
+                </div>
+                <div class="form-group">
+                    <label for="facType">Tip Sport:</label>
+                    <select id="facType" required>
+                        <option value="fotbal">Fotbal</option>
+                        <option value="baschet">Baschet</option>
+                        <option value="tenis">Tenis</option>
+                        <option value="inot">Înot</option>
+                        <option value="fitness">Fitness</option>
+                        <option value="alergare">Alergare</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="facAddress">Adresă:</label>
+                    <input type="text" id="facAddress" required>
+                </div>
+                <div class="form-group">
+                    <label for="facOpenedHours">Program (ex: 08:00 - 22:00):</label>
+                    <input type="text" id="facOpenedHours" required>
+                </div>
+                <div class="form-group">
+                    <label for="facPhone">Telefon:</label>
+                    <input type="text" id="facPhone" required>
+                </div>
+                <div class="form-group">
+                    <label for="facPrice">Nivel Preț (ex: Ridicat, Mediu, Scăzut):</label>
+                    <input type="text" id="facPrice" required>
+                </div>
+                <div class="form-group">
+                    <label for="facDescription">Descriere:</label>
+                    <textarea id="facDescription" required></textarea>
+                </div>
+                <input type="hidden" id="facLat">
+                <input type="hidden" id="facLng">
+                <button type="submit" class="btn">Salvează Facilitatea</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
 </body>
+
 </html>
