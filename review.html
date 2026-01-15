@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adaugă Recenzie - SportHub</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">SportHub</div>
+        <div class="nav-links">
+            <a href="index.html">Hartă</a>
+            <button id="profileBtn" style="display: none;" onclick="window.location.href='profile.html'">Profil</button>
+            <button id="logoutBtn" style="display: none;">Deconectare</button>
+            <a href="auth.html" id="authLink">Autentificare</a>
+        </div>
+    </nav>
+
+    <div class="auth-container">
+        <h2>Adaugă Recenzie</h2>
+        <h3 id="facilityNameTitle" style="text-align: center; color: var(--secondary-color); margin-bottom: 20px;">Se
+            încarcă...</h3>
+
+        <form id="reviewFormPage">
+            <div class="form-group">
+                <label for="rating">Notă (1-5):</label>
+                <select id="rating" required>
+                    <option value="5">5 - Excelent</option>
+                    <option value="4">4 - Foarte bun</option>
+                    <option value="3">3 - Bun</option>
+                    <option value="2">2 - Slab</option>
+                    <option value="1">1 - Foarte slab</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="comment">Comentariu:</label>
+                <textarea id="comment" rows="5" style="width: 100%; padding: 0.8rem;" required
+                    placeholder="Scrie părerea ta aici..."></textarea>
+            </div>
+            <button type="submit" class="btn">Trimite Recenzie</button>
+            <a href="#" id="backLink" class="btn"
+                style="background-color: #95a5a6; display: block; text-align: center; margin-top: 10px;">Înapoi la
+                Facilitate</a>
+        </form>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/data.js"></script>
+</body>
+
+</html>
