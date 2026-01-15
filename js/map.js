@@ -154,44 +154,47 @@ window.require([
     // Run the function!
     loadFacilitiesPoints();
 
-    // Handle Deletion Logic - Robust selection matches both ID and Title
-    view.popup.on("trigger-action", async (event) => {
-        console.log("map.js: Popup action clicked!", event.action.id, event.action.title);
+    // Handle Deletion Logic - Wrap in view.when() to ensure popup is ready
+    view.when(() => {
+        console.log("map.js: View ready, attaching popup listener.");
+        view.popup.on("trigger-action", async (event) => {
+            console.log("map.js: Popup action clicked!", event.action.id, event.action.title);
 
-        if (event.action.id === "delete-facility-action" || event.action.title === "Şterge") {
-            const isAdmin = document.body.classList.contains("is-admin");
-            console.log("map.js: Admin check for delete:", isAdmin);
+            if (event.action.id === "delete-facility-action" || event.action.title === "Şterge") {
+                const isAdmin = document.body.classList.contains("is-admin");
+                console.log("map.js: Admin check for delete:", isAdmin);
 
-            if (!isAdmin) {
-                showToast("Nu ai permisiunea de a şterge facilități.", "error");
-                return;
-            }
+                if (!isAdmin) {
+                    showToast("Nu ai permisiunea de a şterge facilități.", "error");
+                    return;
+                }
 
-            const selectedFeature = view.popup.selectedFeature;
-            if (!selectedFeature) {
-                console.warn("map.js: No feature selected for deletion.");
-                return;
-            }
+                const selectedFeature = view.popup.selectedFeature;
+                if (!selectedFeature) {
+                    console.warn("map.js: No feature selected for deletion.");
+                    return;
+                }
 
-            const facId = selectedFeature.attributes.facilityId;
-            const facName = selectedFeature.attributes.name;
-            console.log("map.js: Attempting delete for:", facName, facId);
+                const facId = selectedFeature.attributes.facilityId;
+                const facName = selectedFeature.attributes.name;
+                console.log("map.js: Attempting delete for:", facName, facId);
 
-            if (confirm(`Sigur doreşti să ştergi "${facName}"?`)) {
-                try {
-                    await deleteDoc(doc(db, "facilities", facId));
-                    console.log("map.js: Firestore delete successful.");
-                    showToast(`Facilitatea "${facName}" a fost ştearsă.`, "success");
+                if (confirm(`Sigur doreşti să ştergi "${facName}"?`)) {
+                    try {
+                        await deleteDoc(doc(db, "facilities", facId));
+                        console.log("map.js: Firestore delete successful.");
+                        showToast(`Facilitatea "${facName}" a fost ştearsă.`, "success");
 
-                    view.closePopup();
-                    graphicsLayer.removeAll();
-                    loadFacilitiesPoints();
-                } catch (error) {
-                    console.error("map.js: Error deleting facility:", error);
-                    showToast("Eroare la ştergerea facilității.", "error");
+                        view.closePopup();
+                        graphicsLayer.removeAll();
+                        loadFacilitiesPoints();
+                    } catch (error) {
+                        console.error("map.js: Error deleting facility:", error);
+                        showToast("Eroare la ştergerea facilității.", "error");
+                    }
                 }
             }
-        }
+        });
     });
 
     // Add Search and Locate widgets
@@ -328,7 +331,91 @@ window.require([
         }
     }
 
+    // --- FILTER LOGIC ---
+    const typeFilter = document.getElementById("typeFilter");
+    if (typeFilter) {
+        typeFilter.addEventListener("change", (event) => {
+            const selectedType = event.target.value;
+            graphicsLayer.graphics.forEach((graphic) => {
+                if (selectedType === "all" || graphic.attributes.type === selectedType) {
+                    graphic.visible = true;
+                } else {
+                    graphic.visible = false;
+                }
+            });
+
+            // Filter Sidebar List
+            const facilityItems = document.querySelectorAll(".facility-item");
+            facilityItems.forEach((item) => {
+                if (selectedType === "all" || item.dataset.type === selectedType) {
+                    item.style.display = "block";
+                } else {
+                    item.style.display = "none";
+                }
+            });
+        });
+    }
+
+    // --- ADMIN: Add Facility UI & Logic Setup ---
+    let isAddMode = false;
+    const addFacilityBtn = document.getElementById("addFacilityBtn");
+    const modal = document.getElementById("addFacilityModal");
+    const closeBtn = document.querySelector(".close");
+    const addFacilityForm = document.getElementById("addFacilityForm");
+    const appContainer = document.querySelector(".container");
+
+    const locatorUrl = "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer";
+
+    if (addFacilityBtn) {
+        addFacilityBtn.addEventListener("click", () => {
+            isAddMode = !isAddMode;
+            if (isAddMode) {
+                addFacilityBtn.classList.add("active-mode");
+                addFacilityBtn.textContent = "Click pe hartă (Anulează)";
+                appContainer.classList.add("add-mode-cursor");
+            } else {
+                addFacilityBtn.classList.remove("active-mode");
+                addFacilityBtn.textContent = "Adaugă facilitate";
+                appContainer.classList.remove("add-mode-cursor");
+            }
+        });
+    }
+
+    // --- UNIFIED MAP CLICK HANDLER ---
     view.on("click", (event) => {
+        // Priority 1: Add Facility Mode
+        if (isAddMode) {
+            console.log("map.js: Map clicked in add mode.");
+            document.getElementById("facLat").value = event.mapPoint.latitude;
+            document.getElementById("facLng").value = event.mapPoint.longitude;
+
+            locator.locationToAddress(locatorUrl, { location: event.mapPoint })
+                .then((response) => {
+                    let cleanAddress = "";
+                    if (response.attributes && response.attributes.Address) {
+                        cleanAddress = response.attributes.Address;
+                        if (response.attributes.City) cleanAddress += ", " + response.attributes.City;
+                    } else {
+                        cleanAddress = response.address;
+                    }
+                    document.getElementById("facAddress").value = cleanAddress;
+                    modal.style.display = "block";
+                })
+                .catch((err) => {
+                    console.error("map.js: Geocoding error:", err);
+                    document.getElementById("facAddress").value = "";
+                    modal.style.display = "block";
+                });
+
+            // Exit Add Mode after click
+            isAddMode = false;
+            addFacilityBtn.classList.remove("active-mode");
+            addFacilityBtn.textContent = "Adaugă facilitate";
+            appContainer.classList.remove("add-mode-cursor");
+            return; // Important: prevent routing logic when adding
+        }
+
+        // Priority 2: Routing Logic (if not in add mode)
         const mapPoint = event.mapPoint;
         if (!mapPoint) return;
 
@@ -358,87 +445,6 @@ window.require([
         // Reset for next route selection
         startPointGeo = null;
         endPointGeo = null;
-    });
-
-    // Filter Logic
-    const typeFilter = document.getElementById("typeFilter");
-    if (typeFilter) {
-        typeFilter.addEventListener("change", (event) => {
-            const selectedType = event.target.value;
-            graphicsLayer.graphics.forEach((graphic) => {
-                if (selectedType === "all" || graphic.attributes.type === selectedType) {
-                    graphic.visible = true;
-                } else {
-                    graphic.visible = false;
-                }
-            });
-
-            // Filter Sidebar List
-            const facilityItems = document.querySelectorAll(".facility-item");
-            facilityItems.forEach((item) => {
-                if (selectedType === "all" || item.dataset.type === selectedType) {
-                    item.style.display = "block";
-                } else {
-                    item.style.display = "none";
-                }
-            });
-        });
-    }
-
-    // --- ADMIN: Add Facility Logic ---
-    let isAddMode = false;
-    const addFacilityBtn = document.getElementById("addFacilityBtn");
-    const modal = document.getElementById("addFacilityModal");
-    const closeBtn = document.querySelector(".close");
-    const addFacilityForm = document.getElementById("addFacilityForm");
-    const appContainer = document.querySelector(".container");
-
-    const locatorUrl = "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer";
-
-    if (addFacilityBtn) {
-        addFacilityBtn.addEventListener("click", () => {
-            isAddMode = !isAddMode;
-            if (isAddMode) {
-                addFacilityBtn.classList.add("active-mode");
-                addFacilityBtn.textContent = "Click pe hartă (Anulează)";
-                appContainer.classList.add("add-mode-cursor");
-            } else {
-                addFacilityBtn.classList.remove("active-mode");
-                addFacilityBtn.textContent = "Adaugă facilitate";
-                appContainer.classList.remove("add-mode-cursor");
-            }
-        });
-    }
-
-    view.on("click", (event) => {
-        if (!isAddMode) return;
-
-        console.log("map.js: Map clicked in add mode.");
-        document.getElementById("facLat").value = event.mapPoint.latitude;
-        document.getElementById("facLng").value = event.mapPoint.longitude;
-
-        locator.locationToAddress(locatorUrl, { location: event.mapPoint })
-            .then((response) => {
-                let cleanAddress = "";
-                if (response.attributes && response.attributes.Address) {
-                    cleanAddress = response.attributes.Address;
-                    if (response.attributes.City) cleanAddress += ", " + response.attributes.City;
-                } else {
-                    cleanAddress = response.address;
-                }
-                document.getElementById("facAddress").value = cleanAddress;
-                modal.style.display = "block";
-            })
-            .catch((err) => {
-                console.error("map.js: Geocoding error:", err);
-                document.getElementById("facAddress").value = "";
-                modal.style.display = "block";
-            });
-
-        isAddMode = false;
-        addFacilityBtn.classList.remove("active-mode");
-        addFacilityBtn.textContent = "Adaugă facilitate";
-        appContainer.classList.remove("add-mode-cursor");
     });
 
     if (closeBtn) {
