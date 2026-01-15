@@ -29,7 +29,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .logo {
@@ -37,7 +37,8 @@ body {
     font-weight: bold;
 }
 
-.nav-links a, .nav-links button {
+.nav-links a,
+.nav-links button {
     color: white;
     text-decoration: none;
     margin-left: 1.5rem;
@@ -79,11 +80,161 @@ body {
     border-bottom: 2px solid var(--secondary-color);
 }
 
-/* Layout */
+#addFacilityBtn {
+    background-color: var(--accent-color) !important;
+    color: white !important;
+    font-weight: bold;
+}
+
+#addFacilityBtn:hover {
+    background-color: #c0392b !important;
+}
+
+#addFacilityBtn.active-mode {
+    background-color: #27ae60 !important;
+    color: white !important;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    overflow-y: auto;
+}
+
+/* Modal Styles Refined */
+.modal-content {
+    background-color: white;
+    margin: 3% auto;
+    padding: 2.5rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 550px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    position: relative;
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-content h2 {
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    border-bottom: 2px solid var(--secondary-color);
+    padding-bottom: 0.5rem;
+    display: inline-block;
+}
+
+.modal .form-group label {
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 0.4rem;
+}
+
+.modal .form-group input,
+.modal .form-group select,
+.modal .form-group textarea {
+    border: 1.5px solid #eee;
+    background-color: #fcfcfc;
+    transition: all 0.2s ease;
+}
+
+.modal .form-group input:focus,
+.modal .form-group select:focus,
+.modal .form-group textarea:focus {
+    border-color: var(--secondary-color);
+    background-color: white;
+    box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.1);
+    outline: none;
+}
+
+/* Toast System */
+.toast-container {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.toast {
+    background: #333;
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 250px;
+    transform: translateX(120%);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border-left: 4px solid var(--secondary-color);
+}
+
+.toast.show {
+    transform: translateX(0);
+}
+
+.toast.success {
+    border-left-color: #2ecc71;
+}
+
+.toast.error {
+    border-left-color: #e74c3c;
+}
+
+.close {
+    position: absolute;
+    right: 1.5rem;
+    top: 1rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    color: #666;
+}
+
+.close:hover {
+    color: var(--accent-color);
+}
+
+.modal .form-group textarea {
+    width: 100%;
+    padding: 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-height: 100px;
+    font-family: inherit;
+}
+
+.add-mode-cursor {
+    cursor: crosshair !important;
+}
+
 .container {
     display: flex;
     flex: 1;
-    height: calc(100vh - 60px); /* Adjust based on navbar height */
+    height: calc(100vh - 60px);
+    /* Adjust based on navbar height */
 }
 
 /* Sidebar */
@@ -164,7 +315,7 @@ body {
     background: white;
     padding: 2rem;
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .auth-container h2 {
@@ -205,6 +356,37 @@ body {
     background-color: #2980b9;
 }
 
+/* Deletion Button (ArcGIS Action) - Premium Design */
+.esri-popup__action[title="Şterge"],
+calcite-action[title="Şterge"],
+.delete-action-btn {
+    display: none !important;
+    /* Hidden by default */
+    color: #e74c3c !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 6px;
+    padding: 6px !important;
+    margin-left: 8px;
+    border: none !important;
+}
+
+/* Show only for Admins */
+body.is-admin .esri-popup__action[title="Şterge"],
+body.is-admin calcite-action[title="Şterge"],
+body.is-admin .delete-action-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+.esri-popup__action[title="Şterge"]:hover,
+calcite-action[title="Şterge"]:hover,
+.delete-action-btn:hover {
+    background-color: rgba(231, 76, 60, 0.1) !important;
+    transform: scale(1.1);
+    color: #c0392b !important;
+}
+
 .switch-auth {
     text-align: center;
     margin-top: 1rem;
@@ -223,7 +405,7 @@ body {
     background: white;
     padding: 2rem;
     border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .facility-header {
@@ -286,7 +468,7 @@ body {
     background: white;
     padding: 2rem;
     border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     margin-bottom: 2rem;
 }
 
@@ -336,7 +518,7 @@ body {
 
 .profile-review-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .profile-review-card .review-header {
@@ -346,7 +528,7 @@ body {
     margin-bottom: 1rem;
 }
 
-.profile-review-card .review-header > div {
+.profile-review-card .review-header>div {
     display: flex;
     justify-content: space-between;
     align-items: center;
