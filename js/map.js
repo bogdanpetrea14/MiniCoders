@@ -60,18 +60,45 @@ window.require([
     // Define the popup that appears when you click a dot
     const popupTemplate = {
         title: "{name}",
-        content: `
-            <p><b>Tip:</b> {type}</p>
-            <p><b>Adresă:</b> {address}</p>
-            <p><b>Rating:</b> ⭐ {averageRating}</p>
-            <a href='details.html?id={facilityId}' class='btn' style='display:block; margin-top:10px; text-align:center; background:#3498db; color:white; padding:8px; text-decoration:none; border-radius:4px;'>Vezi Detalii & Recenzii</a>
-        `,
+        content: (event) => {
+            const attrs = event?.graphic?.attributes || {};
+
+            const wrap = document.createElement("div");
+
+            wrap.innerHTML = `
+      <p><b>Tip:</b> ${attrs.type ?? ""}</p>
+      <p><b>Adresă:</b> ${attrs.address ?? ""}</p>
+      <p><b>Rating:</b> ⭐ ${attrs.averageRating ?? 0}</p>
+    `;
+
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "btn";
+            btn.textContent = "Vezi Detalii & Recenzii";
+            btn.style.cssText =
+                "display:block;margin-top:10px;width:100%;text-align:center;background:#3498db;color:white;padding:10px;border:0;border-radius:4px;cursor:pointer;";
+
+            btn.addEventListener("click", (e) => {
+                // IMPORTANT: fără astea, click-ul poate ajunge și la view.on("click") (routing)
+                e.preventDefault();
+                e.stopPropagation();
+
+                const id = attrs.facilityId;
+                if (!id) return;
+
+                window.open(`details.html?id=${encodeURIComponent(id)}`, "_blank", "noopener");
+            });
+
+            wrap.appendChild(btn);
+            return wrap;
+        },
         actions: [{
             title: "Şterge",
             id: "delete-facility-action",
             className: "esri-icon-trash delete-action-btn"
         }]
     };
+
 
     // --- MAIN FUNCTION: Fetch from Firestore & Add to Map ---
     async function loadFacilitiesPoints() {
