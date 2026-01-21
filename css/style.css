@@ -447,6 +447,11 @@ calcite-action[title="Şterge"]:hover,
 
 .rating {
     color: #f1c40f;
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
 }
 
 /* Profile Page */
