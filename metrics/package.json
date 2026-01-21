@@ -1,0 +1,14 @@
+{
+  "name": "minicoders-metrics-exporter",
+  "version": "1.0.0",
+  "description": "Simple Prometheus exporter for MiniCoders demo metrics",
+  "main": "exporter.js",
+  "scripts": {
+    "start": "node exporter.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "prom-client": "^14.1.0",
+    "firebase-admin": "^11.10.0"
+  }
+}

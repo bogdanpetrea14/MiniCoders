@@ -1,0 +1,89 @@
+{
+  "annotations": {"list":[]},
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {},"overrides": []},
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"reduceOptions": {"calcs": ["last"], "fields": "", "values": false},"orientation": "auto","showThresholdLabels": false,"showThresholdMarkers": true},
+      "pluginVersion": "9.x.x",
+      "targets": [{"expr": "topk(1, facility_average_rating)", "format": "time_series", "instant": true}],
+      "title": "Facility - Highest Average Rating",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {},"overrides": []},
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 0},
+      "id": 2,
+      "options": {"reduceOptions": {"calcs": ["last"], "fields": "", "values": false}},
+      "pluginVersion": "9.x.x",
+      "targets": [{"expr": "topk(1, facility_favorites_count)", "format": "time_series", "instant": true}],
+      "title": "Facility - Most Favorites",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {},"overrides": []},
+      "gridPos": {"h": 6, "w": 24, "x": 0, "y": 6},
+      "id": 3,
+      "options": {"reduceOptions": {"calcs": ["last"], "fields": "", "values": false}},
+      "pluginVersion": "9.x.x",
+      "targets": [{"expr": "topk(1, user_review_count)", "format": "time_series", "instant": true}],
+      "title": "User - Most Reviews (requires `user_review_count` metric)",
+      "type": "stat"
+    }
+  ,
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {},"overrides": []},
+      "gridPos": {"h": 6, "w": 24, "x": 0, "y": 12},
+      "id": 4,
+      "options": {},
+      "pluginVersion": "9.x.x",
+      "targets": [{"expr": "facility_top_rating", "format": "table", "instant": true}],
+      "title": "Top Facility(s) by Rating (name + rating)",
+      "type": "table"
+    }
+  ,
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {},"overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "id": 5,
+      "options": {},
+      "pluginVersion": "9.x.x",
+      "targets": [{"expr": "user_top_reviews", "format": "table", "instant": true}],
+      "title": "Top User(s) by Reviews (name + count)",
+      "type": "table"
+    }
+  ,
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {},"overrides": []},
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 18},
+      "id": 6,
+      "options": {},
+      "pluginVersion": "9.x.x",
+      "targets": [{"expr": "facility_favorites_count == scalar(max(facility_favorites_count))", "format": "table", "instant": true}],
+      "title": "Facilities with Most Favorites (name + count)",
+      "type": "table"
+    }
+  ],
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": ["minicoders","metrics"],
+  "templating": {"list": []},
+  "time": {"from": "now-7d", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "MiniCoders - Top Metrics",
+  "uid": "minicoders-top-metrics",
+  "version": 1
+}
