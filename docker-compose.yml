@@ -1,0 +1,81 @@
+version: '3.8'
+services:
+  metrics-exporter:
+    build: ./metrics
+    ports:
+      - "9100:9100"
+    volumes:
+      - ./sport_facilities:/app/sport_facilities:ro
+      - ./secrets/serviceAccount.json:/secrets/serviceAccount.json:ro
+    environment:
+      - FIREBASE_SERVICE_ACCOUNT_PATH=/secrets/serviceAccount.json
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - metrics-exporter
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+  loki:
+    image: grafana/loki:2.8.2
+    user: "0:0"
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki-data-1:/loki
+      - loki-wal-1:/wal
+      - ./loki/local-config.yaml:/etc/loki/local-config.yaml:ro
+    command: -config.file=/etc/loki/local-config.yaml
+    depends_on:
+      - prometheus
+  loki2:
+    image: grafana/loki:2.8.2
+    user: "0:0"
+    # do not publish HTTP port for second instance; internal network only
+    volumes:
+      - loki-data-2:/loki
+      - loki-wal-2:/wal
+      - ./loki/local-config.yaml:/etc/loki/local-config.yaml:ro
+    command: -config.file=/etc/loki/local-config.yaml
+    depends_on:
+      - prometheus
+
+  promtail:
+    image: grafana/promtail:2.8.2
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./promtail/config.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+
+volumes:
+  grafana-data:
+    driver: local
+  loki-data:
+    driver: local
+  loki-data-1:
+    driver: local
+  loki-wal-1:
+    driver: local
+  loki-data-2:
+    driver: local
+  loki-wal-2:
+    driver: local
