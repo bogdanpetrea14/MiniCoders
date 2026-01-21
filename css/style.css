@@ -357,35 +357,27 @@ body {
     background-color: #2980b9;
 }
 
-/* Deletion Button (ArcGIS Action) - Premium Design */
-.esri-popup__action[title="Şterge"],
-calcite-action[title="Şterge"],
-.delete-action-btn {
-    display: none !important;
-    /* Hidden by default */
+/* Popup Actions Styling */
+.esri-popup__action[title="Şterge"] {
     color: #e74c3c !important;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 6px;
-    padding: 6px !important;
-    margin-left: 8px;
-    border: none !important;
 }
 
-/* Show only for Admins */
-body.is-admin .esri-popup__action[title="Şterge"],
-body.is-admin calcite-action[title="Şterge"],
-body.is-admin .delete-action-btn {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
+.esri-popup__action[title="Adaugă la favorite"] {
+    color: #e74c3c !important;
 }
 
-.esri-popup__action[title="Şterge"]:hover,
-calcite-action[title="Şterge"]:hover,
-.delete-action-btn:hover {
-    background-color: rgba(231, 76, 60, 0.1) !important;
-    transform: scale(1.1);
-    color: #c0392b !important;
+/* Custom Heart Icon */
+.esri-icon-custom-heart::before {
+    content: "❤️" !important;
+    font-size: 16px;
+    display: inline-block;
+    font-style: normal;
+    font-family: inherit !important;
+    /* Override Esri Icon Font */
+}
+
+.esri-popup__action:hover {
+    background-color: rgba(0, 0, 0, 0.05) !important;
 }
 
 .switch-auth {
@@ -565,8 +557,122 @@ calcite-action[title="Şterge"]:hover,
     font-style: italic;
 }
 
+
+.btn-delete-small {
+    background-color: transparent;
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-delete-small:hover {
+    background-color: #e74c3c;
+    color: white;
+}
+
 .error-message {
     text-align: center;
-    color: var(--accent-color);
+    color: #e74c3c;
     padding: 2rem;
+}
+
+/* Custom Confirmation Modal (Toast Style) */
+.custom-modal {
+    display: none;
+    position: fixed;
+    z-index: 3001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.custom-modal.show {
+    display: flex;
+}
+
+.custom-modal-content {
+    background: #333;
+    color: white;
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    border-left: 4px solid var(--secondary-color);
+    max-width: 400px;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    animation: slideDown 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.custom-modal-content p {
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.custom-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn-confirm-yes,
+.btn-confirm-no {
+    padding: 0.5rem 1.2rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: filter 0.2s;
+}
+
+.btn-confirm-yes {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.btn-confirm-yes:hover {
+    filter: brightness(1.1);
+}
+
+.btn-confirm-no {
+    background-color: transparent;
+    border: 1px solid #666;
+    color: #ccc;
+}
+
+.btn-confirm-no:hover {
+    border-color: #999;
+    color: white;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

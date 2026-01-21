@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="ro">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profil - SportHub</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
     <!-- Navigation -->
     <nav class="navbar">
@@ -45,12 +47,30 @@
                 <p>Se încarcă review-urile...</p>
             </div>
         </div>
+
+        <!-- My Favorites Section -->
+        <div class="profile-section">
+            <h2>Favoritele mele</h2>
+            <div id="myFavoritesList" class="reviews-list">
+                <p>Se încarcă favoritele...</p>
+            </div>
+        </div>
     </div>
 
-    <!-- Firebase SDKs -->
+    <!-- Custom Confirmation Modal -->
+    <div id="customConfirmModal" class="custom-modal">
+        <div class="custom-modal-content">
+            <p id="customConfirmMessage">Ești sigur?</p>
+            <div class="custom-modal-actions">
+                <button id="btnConfirmYes" class="btn-confirm-yes">Da</button>
+                <button id="btnConfirmNo" class="btn-confirm-no">Nu</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="js/firebase-config.js"></script>
     <script type="module" src="js/auth.js"></script>
     <script type="module" src="js/profile.js"></script>
 </body>
-</html>
 
+</html>

@@ -2,11 +2,17 @@ import { db } from "./firebase-config.js";
 import {
   collection,
   getDocs,
+  getDoc,
   addDoc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
   serverTimestamp,
   doc,
   deleteDoc,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { auth } from "./firebase-config.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 // ArcGIS API Key
 const apiKey =
@@ -100,52 +106,70 @@ window.require(
 
     // PopupTemplate: content ca funcție => buton real (nu link HTML),
     // și stopPropagation ca să nu-ți declanșeze view.on("click") / routing.
-    const popupTemplate = {
-      title: "{name}",
-      content: (event) => {
-        const attrs = event?.graphic?.attributes || {};
-        const wrap = document.createElement("div");
+    // Global variables for user state
+    let currentUser = null;
+    let isUserAdmin = false;
 
-        wrap.innerHTML = `
-          <p><b>Tip:</b> ${attrs.type ?? ""}</p>
-          <p><b>Adresă:</b> ${attrs.address ?? ""}</p>
-          <p><b>Rating:</b> ⭐ ${attrs.averageRating ?? 0}</p>
-        `;
+    // Popup Template Generator
+    function getPopupTemplate() {
+      const actions = [];
 
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "btn";
-        btn.textContent = "Vezi Detalii & Recenzii";
-        btn.style.cssText =
-          "display:block;margin-top:10px;width:100%;text-align:center;background:#3498db;color:white;padding:10px;border:0;border-radius:4px;cursor:pointer;";
-
-        btn.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-
-          const id = attrs.facilityId;
-          if (!id) {
-            showToast("Lipsește facilityId pentru detalii.", "error");
-            return;
-          }
-          window.open(
-            `details.html?id=${encodeURIComponent(id)}`,
-            "_blank",
-            "noopener"
-          );
-        });
-
-        wrap.appendChild(btn);
-        return wrap;
-      },
-      actions: [
-        {
+      if (isUserAdmin) {
+        actions.push({
           title: "Șterge",
           id: "delete-facility-action",
-          className: "esri-icon-trash delete-action-btn",
+          className: "esri-icon-trash",
+        });
+      } else if (currentUser) {
+        // Logged in normal user -> Favorites
+        actions.push({
+          title: "Adaugă la favorite",
+          id: "toggle-favorite-action",
+          className: "esri-icon-custom-heart", // Custom Heart icon
+        });
+      }
+
+      return {
+        title: "{name}",
+        content: (event) => {
+          const attrs = event?.graphic?.attributes || {};
+          const wrap = document.createElement("div");
+
+          wrap.innerHTML = `
+            <p><b>Tip:</b> ${attrs.type ?? ""}</p>
+            <p><b>Adresă:</b> ${attrs.address ?? ""}</p>
+            <p><b>Rating:</b> ⭐ ${attrs.averageRating ?? 0}</p>
+          `;
+
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "btn";
+          btn.textContent = "Vezi Detalii & Recenzii";
+          btn.style.cssText =
+            "display:block;margin-top:10px;width:100%;text-align:center;background:#3498db;color:white;padding:10px;border:0;border-radius:4px;cursor:pointer;";
+
+          btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const id = attrs.facilityId;
+            if (!id) {
+              showToast("Lipsește facilityId pentru detalii.", "error");
+              return;
+            }
+            window.open(
+              `details.html?id=${encodeURIComponent(id)}`,
+              "_blank",
+              "noopener"
+            );
+          });
+
+          wrap.appendChild(btn);
+          return wrap;
         },
-      ],
-    };
+        actions: actions,
+      };
+    }
 
     // Load facilities
     async function loadFacilitiesPoints() {
@@ -187,7 +211,7 @@ window.require(
               outline: { color: [255, 255, 255], width: 1 },
             },
             attributes: { ...data, facilityId: docId },
-            popupTemplate,
+            popupTemplate: getPopupTemplate(),
           });
 
           graphicsLayer.add(pointGraphic);
@@ -220,7 +244,26 @@ window.require(
       }
     }
 
-    loadFacilitiesPoints();
+    // Monitor Auth State
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      isUserAdmin = false;
+
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists() && userDoc.data().role === "admin") {
+            isUserAdmin = true;
+          }
+        } catch (e) {
+          console.error("map.js: Role check failed:", e);
+        }
+      }
+
+      console.log("map.js: Auth changed. User:", user?.email, "Admin:", isUserAdmin);
+      // Reload points to update PopupTemplates with correct actions
+      loadFacilitiesPoints();
+    });
 
     // ✅ DELETE handler – robust: așteaptă până există popup.viewModel și abia apoi atașează on()
     view.when(() => {
@@ -237,47 +280,78 @@ window.require(
           console.log("map.js: Popup viewModel ready.");
 
           view.popup.viewModel.on("trigger-action", async (event) => {
-            if (event.action.id !== "delete-facility-action") return;
-
-            const isAdmin = document.body.classList.contains("is-admin");
-            console.log("map.js: Delete clicked. isAdmin =", isAdmin);
-
-            if (!isAdmin) {
-              showToast("Nu ai permisiunea de a șterge facilități.", "error");
-              return;
-            }
-
+            const actionId = event.action.id;
             const selectedFeature = view.popup.selectedFeature;
+
             if (!selectedFeature) {
               showToast("Nu am găsit facilitatea selectată.", "error");
               return;
             }
-
             const facId = selectedFeature?.attributes?.facilityId;
             const facName = selectedFeature?.attributes?.name ?? "facilitatea";
 
-            if (!facId) {
-              console.warn(
-                "map.js: Missing facilityId in attributes:",
-                selectedFeature?.attributes
-              );
-              showToast("Lipsește facilityId (nu pot șterge).", "error");
-              return;
+            // --- DELETE ACTION ---
+            if (actionId === "delete-facility-action") {
+              if (!isUserAdmin) {
+                showToast("Nu ai permisiunea de a șterge facilități.", "error");
+                return;
+              }
+
+              if (!facId) {
+                showToast("Lipsește facilityId (nu pot șterge).", "error");
+                return;
+              }
+
+              if (!confirm(`Sigur dorești să ștergi "${facName}"?`)) return;
+
+              try {
+                await deleteDoc(doc(db, "facilities", facId));
+                showToast(`Facilitatea "${facName}" a fost ștearsă.`, "success");
+                view.closePopup();
+                loadFacilitiesPoints();
+              } catch (error) {
+                console.error("Delete failed:", error);
+                showToast(`Eroare la ștergere: ${error.message}`, "error");
+              }
             }
 
-            if (!confirm(`Sigur dorești să ștergi "${facName}"?`)) return;
+            // --- FAVORITE ACTION ---
+            if (actionId === "toggle-favorite-action") {
+              if (!currentUser) {
+                showToast("Trebuie să fii autentificat.", "error");
+                return;
+              }
+              if (!facId) {
+                showToast("Lipsește facilityId.", "error");
+                return;
+              }
 
-            try {
-              await deleteDoc(doc(db, "facilities", facId));
-              showToast(`Facilitatea "${facName}" a fost ștearsă.`, "success");
-              view.closePopup();
-              await loadFacilitiesPoints();
-            } catch (error) {
-              console.error("Delete failed:", error?.code, error?.message, error);
-              showToast(
-                `Eroare la ștergere: ${error?.code || "unknown"}`,
-                "error"
-              );
+              try {
+                // Check if already favorite
+                const userRef = doc(db, "users", currentUser.uid);
+                const userSnap = await getDoc(userRef);
+                const userData = userSnap.exists() ? userSnap.data() : {};
+                const favs = userData.favorites || [];
+
+                const isFav = favs.includes(facId);
+
+                if (isFav) {
+                  // Remove
+                  await updateDoc(userRef, {
+                    favorites: arrayRemove(facId)
+                  });
+                  showToast("Eliminat de la favorite.", "success");
+                } else {
+                  // Add
+                  await updateDoc(userRef, {
+                    favorites: arrayUnion(facId)
+                  });
+                  showToast("Adăugat la favorite! ❤️", "success");
+                }
+              } catch (err) {
+                console.error("Favorites error:", err);
+                showToast("Eroare la actualizare favorite.", "error");
+              }
             }
           });
         })
@@ -388,7 +462,7 @@ window.require(
         view.goTo(routeGraphic);
       } catch (error) {
         console.error("Route error:", error);
-        alert("Nu s-a putut calcula ruta. Verifică permisiunea de locație.");
+        showToast("Nu s-a putut calcula ruta. Verifică permisiunea de locație.", success=false);
       }
     }
 

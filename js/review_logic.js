@@ -51,7 +51,7 @@ formEl.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     if (!currentUser) {
-        alert("Autentifică-te întâi!");
+        showToast("Autentifică-te întâi!", success=false);
         return;
     }
 
@@ -90,13 +90,13 @@ formEl.addEventListener('submit', async (e) => {
             });
         }
 
-        alert("Recenzia a fost trimisă!");
+        showToast("Recenzia a fost trimisă!", success=true);
         // Redirect back to details
         window.location.href = `details.html?id=${facilityId}`;
 
     } catch (err) {
         console.error(err);
-        alert("A apărut o eroare: " + err.message);
+        showToast("A apărut o eroare: " + err.message, success=false);
         submitBtn.textContent = "Publică Recenzia";
         submitBtn.disabled = false;
     }

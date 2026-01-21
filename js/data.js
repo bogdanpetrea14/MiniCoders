@@ -29,6 +29,25 @@ const addReviewContainer = document.getElementById("addReviewContainer");
 let isAdmin = false;
 
 // ---------- Helpers ----------
+function showToast(message, type = "success") {
+  let container = document.getElementById("toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toast-container";
+    container.className = "toast-container";
+    document.body.appendChild(container); // Append to body if missing
+  }
+  const toast = document.createElement("div");
+  toast.className = `toast ${type} show`;
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
 function formatDate(createdAt) {
   if (!createdAt) return "";
   // Firestore Timestamp
@@ -70,7 +89,7 @@ async function recomputeFacilityStats() {
 
 async function deleteReviewById(reviewId, reviewUserName = "review") {
   if (!isAdmin) {
-    alert("Nu ai permisiunea de admin pentru ștergere.");
+    showToast("Nu ai permisiunea de admin pentru ștergere.", "error");
     return;
   }
   if (!confirm(`Sigur vrei să ștergi acest review (${reviewUserName})?`)) return;
@@ -82,7 +101,7 @@ async function deleteReviewById(reviewId, reviewUserName = "review") {
     await loadFacilityDetails();
   } catch (err) {
     console.error("Delete review failed:", err);
-    alert(`Eroare la ștergere: ${err.code || err.message}`);
+    showToast(`Eroare la ștergere: ${err.code || err.message}`, "error");
   }
 }
 
@@ -199,12 +218,19 @@ if (reviewForm) {
   reviewForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    const submitBtn = reviewForm.querySelector("button[type='submit']");
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Se trimite...";
+
     const rating = parseInt(document.getElementById("rating").value, 10);
     const comment = document.getElementById("comment").value;
     const user = auth.currentUser;
 
     if (!user) {
-      alert("Trebuie să fii autentificat!");
+      showToast("Trebuie să fii autentificat!", "error");
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
       return;
     }
 
@@ -222,14 +248,17 @@ if (reviewForm) {
       // 2) Recompute stats (robust)
       await recomputeFacilityStats();
 
-      alert("Recenzie adăugată!");
+      showToast("Recenzie adăugată!", "success");
       reviewForm.reset();
 
       await loadReviews();
       await loadFacilityDetails();
     } catch (error) {
       console.error("Error adding review:", error);
-      alert("Eroare la adăugarea recenziei.");
+      showToast("Eroare la adăugarea recenziei.", "error");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
     }
   });
 }
@@ -258,7 +287,9 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 // ---------- Init ----------
-if (facilityId) {
-  loadFacilityDetails();
-  loadReviews();
-}
+document.addEventListener("DOMContentLoaded", () => {
+  if (facilityId) {
+    loadFacilityDetails();
+    loadReviews();
+  }
+});
