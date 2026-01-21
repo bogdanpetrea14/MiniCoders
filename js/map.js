@@ -109,6 +109,7 @@ window.require(
     // Global variables for user state
     let currentUser = null;
     let isUserAdmin = false;
+    let editingFacilityId = null; // Track which facility is being edited
 
     // Popup Template Generator
     function getPopupTemplate() {
@@ -119,6 +120,11 @@ window.require(
           title: "Șterge",
           id: "delete-facility-action",
           className: "esri-icon-trash",
+        });
+        actions.push({
+          title: "Editează",
+          id: "edit-facility-action",
+          className: "esri-icon-edit",
         });
       } else if (currentUser) {
         // Logged in normal user -> Favorites
@@ -315,6 +321,41 @@ window.require(
               }
             }
 
+            // --- EDIT ACTION ---
+            if (actionId === "edit-facility-action") {
+              if (!isUserAdmin) return;
+              if (!facId) {
+                showToast("Eroare: lipseste ID-ul.", "error");
+                return;
+              }
+
+              // 1. Set edit mode
+              editingFacilityId = facId;
+
+              // 2. Pre-fill form
+              const attrs = selectedFeature.attributes;
+              document.getElementById("facName").value = attrs.name || "";
+              document.getElementById("facType").value = attrs.type || "fotbal";
+              document.getElementById("facAddress").value = attrs.address || "";
+              document.getElementById("facOpenedHours").value = attrs.openedHours || "";
+              document.getElementById("facPhone").value = attrs.phone || "";
+              document.getElementById("facPrice").value = attrs.priceLevel || "Mediu";
+              document.getElementById("facDescription").value = attrs.description || "";
+              document.getElementById("facLat").value = attrs.latitude || "";
+              document.getElementById("facLng").value = attrs.longitude || "";
+
+              // 3. Update Modal UI
+              document.querySelector("#addFacilityModal h2").textContent = "Editează Facilitate";
+              const submitBtn = document.querySelector("#addFacilityForm button[type='submit']");
+              if (submitBtn) submitBtn.textContent = "Salvează Modificări";
+
+              // 4. Show Modal
+              if (modal) modal.style.display = "block";
+
+              // 5. Close popup
+              view.closePopup();
+            }
+
             // --- FAVORITE ACTION ---
             if (actionId === "toggle-favorite-action") {
               if (!currentUser) {
@@ -462,7 +503,7 @@ window.require(
         view.goTo(routeGraphic);
       } catch (error) {
         console.error("Route error:", error);
-        showToast("Nu s-a putut calcula ruta. Verifică permisiunea de locație.", success=false);
+        showToast("Nu s-a putut calcula ruta. Verifică permisiunea de locație.", success = false);
       }
     }
 
@@ -500,6 +541,13 @@ window.require(
 
     if (addFacilityBtn) {
       addFacilityBtn.addEventListener("click", () => {
+        // Reset to ADD mode
+        editingFacilityId = null;
+        if (addFacilityForm) addFacilityForm.reset();
+        document.querySelector("#addFacilityModal h2").textContent = "Adaugă Facilitate";
+        const submitBtn = document.querySelector("#addFacilityForm button[type='submit']");
+        if (submitBtn) submitBtn.textContent = "Adaugă Facilitate";
+
         isAddMode = !isAddMode;
 
         if (isAddMode) {
@@ -594,7 +642,7 @@ window.require(
       addFacilityForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const newFacility = {
+        const facilityData = {
           name: document.getElementById("facName").value,
           type: document.getElementById("facType").value,
           address: document.getElementById("facAddress").value,
@@ -604,21 +652,32 @@ window.require(
           description: document.getElementById("facDescription").value,
           latitude: parseFloat(document.getElementById("facLat").value),
           longitude: parseFloat(document.getElementById("facLng").value),
-          averageRating: 0,
-          reviewCount: 0,
-          createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          createdBy: "admin",
         };
 
         try {
-          await addDoc(collection(db, "facilities"), newFacility);
+          if (editingFacilityId) {
+            // UPDATE EXISTING
+            await updateDoc(doc(db, "facilities", editingFacilityId), facilityData);
+            showToast("Facilitatea a fost actualizată!", "success");
+          } else {
+            // CREATE NEW
+            facilityData.createdAt = serverTimestamp();
+            facilityData.createdBy = "admin";
+            facilityData.averageRating = 0;
+            facilityData.reviewCount = 0;
+            await addDoc(collection(db, "facilities"), facilityData);
+            showToast("Facilitatea a fost adăugată cu succes!", "success");
+          }
+
           if (modal) modal.style.display = "none";
           addFacilityForm.reset();
-          showToast("Facilitatea a fost adăugată cu succes!", "success");
+          // Reset state
+          editingFacilityId = null;
+
           await loadFacilitiesPoints();
         } catch (error) {
-          console.error("map.js: Error adding facility:", error);
+          console.error("map.js: Error saving facility:", error);
           showToast(`Eroare la salvare: ${error?.code || "unknown"}`, "error");
         }
       });
