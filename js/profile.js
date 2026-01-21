@@ -105,7 +105,7 @@ async function loadMyReviews(userId) {
                 <div class="review-header">
                     <div>
                         <strong><a href="details.html?id=${review.facilityId}" class="facility-link">${review.facilityName}</a></strong>
-                        <span class="rating">★ ${review.rating}</span>
+                        <span class="rating">⭐ ${review.rating}</span>
                     </div>
                     <small style="color:#999">${dateStr}</small>
                 </div>

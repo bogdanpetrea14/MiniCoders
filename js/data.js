@@ -101,7 +101,7 @@ async function loadFacilityDetails() {
       facilityType.textContent = (data.type ?? "") + (data.priceLevel ? ` (${data.priceLevel})` : "");
       facilityAddress.textContent = data.address ?? "";
       facilityHours.textContent = data.openedHours || "08:00 - 22:00";
-      facilityRating.textContent = `★ ${data.averageRating ?? "N/A"}`;
+      facilityRating.textContent = `⭐ ${data.averageRating ?? "N/A"}`;
       facilityDescription.textContent = data.description || "Fără descriere.";
     } else {
       document.querySelector(".details-container").innerHTML = "<h2>Facilitatea nu a fost găsită!</h2>";
@@ -152,7 +152,7 @@ async function loadReviews() {
 
     const ratingSpan = document.createElement("span");
     ratingSpan.className = "rating";
-    ratingSpan.textContent = `★ ${review.rating}`;
+    ratingSpan.textContent = `⭐ ${review.rating}`;
 
     right.appendChild(ratingSpan);
 
